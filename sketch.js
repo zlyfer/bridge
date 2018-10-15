@@ -3,7 +3,8 @@ var
 	stick,
 	score,
 	highscore,
-	gamestate;
+	gamestate,
+	manx;
 var bridgeheight = 200;
 
 function setup() {
@@ -38,7 +39,8 @@ function game() {
 	})
 	if (
 		bridges[0].x == bridges[0].xdest &&
-		bridges[1].x == bridges[1].xdest
+		bridges[1].x == bridges[1].xdest &&
+		gamestate == "waiting"
 	) {
 		gamestate = "running";
 	}
@@ -53,28 +55,33 @@ function game() {
 		if (stick.angle == 90) {
 			stick.state = "flipped";
 		}
-		switch (stick.state) {
-			case "growing":
-				stick.grow();
-				break;
-			case "grown":
-				stick.flip();
-				break;
-			case "flipped":
-				checkResult();
-				break;
-		}
 	}
+	switch (stick.state) {
+		case "growing":
+			stick.grow();
+			break;
+		case "grown":
+			stick.flip();
+			break;
+		case "flipped":
+			if (gamestate == "running") {
+				gamestate = "stickmoving";
+			}
+			moveMan();
+			break;
+	}
+	moveWaves();
 }
 
 function reset() {
 	score = 0;
 	bridges = [];
 	newBridge(new Bridge(5, 30));
-	gamestate = "waiting";
 }
 
 function newBridge(bridge) {
+	manx = false;
+	gamestate = "waiting";
 	bridges = bridges.slice(1);
 	if (bridge) {
 		bridges.push(bridge);
@@ -94,7 +101,33 @@ function checkResult() {
 	} else {
 		gamestate = "lost";
 	}
+	push();
+	textAlign(CENTER);
+	textSize(32);
+	textStyle(BOLD);
+	text(`GAME ${gamestate.toUpperCase()}`, width / 2, height / 3);
+	pop();
 }
+
+function moveMan() {
+	if (manx == false) {
+		manx = bridges[0].x + bridges[0].width + 3;
+	}
+	let many = height - bridges[0].height;
+	push();
+	noStroke();
+	fill(0);
+	rect(manx - 3, many - 11, 6, 5);
+	pop();
+	if (gamestate == "stickmoving") {
+		manx++
+	}
+	if (manx >= bridges[0].x + bridges[0].width + stick.height + 3) {
+		checkResult();
+	}
+}
+
+function moveWaves() {}
 
 function mousePressed() {
 	switch (gamestate) {
@@ -109,6 +142,9 @@ function mousePressed() {
 			break;
 		case "lost":
 			reset();
+			break;
+		case "stickmoving":
+			manx = bridges[0].x + bridges[0].width + stick.height + 3;
 			break;
 	}
 }
